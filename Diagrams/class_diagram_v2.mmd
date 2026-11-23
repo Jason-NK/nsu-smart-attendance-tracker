@@ -1,0 +1,51 @@
+classDiagram
+    class User {
+        -String username
+        -String password
+        -String email
+        +login()
+        +logout()
+    }
+    class Student {
+        -String studentID
+        -String major
+        +scanCode()
+        +viewHistory()
+    }
+    class Professor {
+        -String employeeID
+        -String department
+        +createCourse()
+        +requestReport()
+    }
+    class Course {
+        -String courseID
+        -String courseName
+        +addSession()
+    }
+    class AttendanceSession {
+        -String sessionID
+        -Date sessionDate
+        -Time startTime
+        +startSession()
+        +endSession()
+    }
+    class QRCode {
+        -String codeData
+        -Time expiration
+        +generateCode()
+        +validateScan()
+    }
+    class AttendanceRecord {
+        -String recordID
+        -Time checkInTime
+        -String status
+        +saveRecord()
+    }
+    User <|-- Student
+    User <|-- Professor
+    Professor "1" --> "*" Course : manages
+    Course "1" --> "*" AttendanceSession : has
+    AttendanceSession "1" --> "1" QRCode : uses
+    QRCode "1" --> "*" AttendanceRecord : creates
+    Student "1" --> "*" AttendanceRecord : owns

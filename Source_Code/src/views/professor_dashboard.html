@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professor Dashboard - NSU Smart Attendance Tracker</title>
+    
+    <style>
+        :root {
+            --nsu-green: #007A33;
+            --nsu-green-dark: #005824;
+            --nsu-gold: #F2A900;
+            --bg: #f4f7f5;
+            --card: #ffffff;
+            --text: #1c2420;
+            --muted: #5a6660;
+            --danger: #b42318;
+            --danger-bg: #fef3f2;
+            --success: #067647;
+            --success-bg: #ecfdf3;
+            --border: #d8e0dc;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+        body.large-text { font-size: 125%; }
+        header {
+            background: var(--nsu-green);
+            color: #fff;
+            padding: 14px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 4px solid var(--nsu-gold);
+        }
+        header h1 { margin: 0; font-size: 1.25rem; }
+        nav { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        nav a, nav button {
+            color: #fff;
+            text-decoration: none;
+            background: rgba(255,255,255,0.16);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        nav a:hover, nav button:hover { background: rgba(255,255,255,0.28); }
+        main { max-width: 1050px; margin: 24px auto; padding: 0 16px; }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 4px; margin-top: 10px; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .btn {
+            display: inline-block;
+            background: var(--nsu-green);
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            margin-top: 14px;
+        }
+        .btn:hover { background: var(--nsu-green-dark); }
+        .btn-gold { background: var(--nsu-gold); color: #1c2420; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .alert-error {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border: 1px solid #fecdca;
+            padding: 12px 14px;
+            border-radius: 6px;
+            margin-bottom: 14px;
+            font-weight: 500;
+        }
+        .alert-success {
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid #abefc6;
+            padding: 12px 14px;
+            border-radius: 6px;
+            margin-bottom: 14px;
+            font-weight: 500;
+        }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+        th { background: #eef4f0; font-weight: 700; }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: var(--success-bg);
+            color: var(--success);
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .qr-box { text-align: center; padding: 14px; border: 2px dashed var(--nsu-green); border-radius: 10px; background: #fbfdfb; }
+        .qr-box img { max-width: 240px; width: 100%; height: auto; }
+        .totp-code { font-size: 2rem; font-weight: 800; letter-spacing: 6px; color: var(--nsu-green); margin: 8px 0; }
+        .muted { color: var(--muted); font-size: 0.9rem; }
+    </style>
+    <script>
+        function toggleLargeText() {
+            document.body.classList.toggle("large-text");
+        }
+    </script>
+
+</head>
+<body>
+    <header>
+        <h1>NSU Smart Attendance Tracker - Professor Dashboard</h1>
+        <nav>
+            <span>{{ full_name }}</span>
+            <button type="button" onclick="toggleLargeText()">Big Text</button>
+            <a href="/logout">Logout</a>
+        </nav>
+    </header>
+    <main>
+        {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+        {% if success %}<div class="alert-success">{{ success }}</div>{% endif %}
+
+        {% if active_session and qr_bundle %}
+        <div class="card qr-box">
+            <h2 style="margin-top:0; color:var(--nsu-green);">
+                Live Attendance Session: {{ active_session.course_code }} ({{ active_session.session_date }})
+            </h2>
+            <p class="muted">
+                Active Window: {{ active_session.start_time }} to {{ active_session.end_time }} |
+                Auto-refreshes every 30 seconds to block screenshot sharing.
+            </p>
+            <img id="liveQrImg" src="{{ qr_bundle.qr_data_uri }}" alt="Dynamic TOTP QR Code">
+            <div class="totp-code" id="liveBackupCode">{{ qr_bundle.code }}</div>
+            <p class="muted">Backup 6-digit code refreshes in <strong id="countdown">{{ qr_bundle.seconds_remaining }}</strong>s</p>
+            <form method="POST" action="/sessions/{{ active_session.id }}/end">
+                <button class="btn btn-danger" type="submit">End Session</button>
+            </form>
+        </div>
+        <script>
+            const sessionId = {{ active_session.id }};
+            let secs = {{ qr_bundle.seconds_remaining }};
+            setInterval(async () => {
+                secs -= 1;
+                if (secs <= 0) {
+                    const res = await fetch(`/sessions/${sessionId}/qr_refresh`);
+                    const data = await res.json();
+                    if (data.expired) {
+                        window.location.reload();
+                        return;
+                    }
+                    document.getElementById("liveQrImg").src = data.qr_data_uri;
+                    document.getElementById("liveBackupCode").textContent = data.code;
+                    secs = data.seconds_remaining;
+                }
+                document.getElementById("countdown").textContent = secs;
+            }, 1000);
+        </script>
+        {% endif %}
+
+        <div class="grid">
+            <div class="card">
+                <h3 style="margin-top:0;">Start Attendance Session</h3>
+                <form method="POST" action="/sessions/start">
+                    <label for="course_id">Select Course</label>
+                    <select id="course_id" name="course_id" required>
+                        {% for c in courses %}
+                        <option value="{{ c.id }}" {% if selected_course and selected_course.id == c.id %}selected{% endif %}>
+                            {{ c.course_code }} - {{ c.course_name }} ({{ c.student_count }} enrolled)
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="session_date">Session Date</label>
+                    <input id="session_date" name="session_date" type="date" value="{{ today_str }}" required>
+
+                    <label for="start_time">Start Time</label>
+                    <input id="start_time" name="start_time" type="time" value="00:01" required>
+
+                    <label for="end_time">End Time (Auto-Closes Session)</label>
+                    <input id="end_time" name="end_time" type="time" value="23:59" required>
+
+                    <button class="btn" type="submit">Start Session &amp; Generate QR</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top:0;">Create New Course</h3>
+                <form method="POST" action="/courses/create">
+                    <label for="course_code">Course Code</label>
+                    <input id="course_code" name="course_code" type="text" required placeholder="e.g., CSC-380">
+
+                    <label for="course_name">Course Name</label>
+                    <input id="course_name" name="course_name" type="text" required placeholder="e.g., Software Engineering">
+
+                    <button class="btn btn-gold" type="submit">Create Course</button>
+                </form>
+
+                {% if selected_course %}
+                <hr style="margin:18px 0; border:none; border-top:1px solid var(--border);">
+                <h4 style="margin:0 0 8px 0;">Upload CSV Class Roster ({{ selected_course.course_code }})</h4>
+                <form method="POST" action="/courses/{{ selected_course.id }}/upload_roster" enctype="multipart/form-data" onsubmit="return checkRosterFile()">
+                    <input id="roster_file" name="roster_file" type="file" accept=".csv" required>
+                    <button class="btn" type="submit">Upload Roster (.csv, &lt; 2 MB)</button>
+                </form>
+                <script>
+                    function checkRosterFile() {
+                        const f = document.getElementById("roster_file").files[0];
+                        if (!f) return false;
+                        if (!f.name.toLowerCase().endsWith(".csv") || f.size > 2 * 1024 * 1024) {
+                            alert("Only CSV files under 2 MB are allowed for class rosters.");
+                            return false;
+                        }
+                        return true;
+                    }
+                </script>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px;">
+                <h3 style="margin:0;">
+                    Course Attendance Records {% if selected_course %}({{ selected_course.course_code }}){% endif %}
+                </h3>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <form method="GET" action="/professor_dashboard" style="display:flex; gap:8px; align-items:center;">
+                        <select name="course_id" onchange="this.form.submit()" style="width:auto;">
+                            {% for c in courses %}
+                            <option value="{{ c.id }}" {% if selected_course and selected_course.id == c.id %}selected{% endif %}>
+                                {{ c.course_code }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                    {% if selected_course %}
+                    <a class="btn btn-gold" style="margin-top:0;" href="/courses/{{ selected_course.id }}/export_csv">Export CSV Report</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if records %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Student ID</th>
+                        <th>Session Date</th>
+                        <th>Check-In Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in records %}
+                    <tr>
+                        <td>{{ rec.student_name }}</td>
+                        <td>{{ rec.student_id }}</td>
+                        <td>{{ rec.session_date }}</td>
+                        <td>{{ rec.check_in_time }}</td>
+                        <td><span class="badge">{{ rec.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="muted" style="margin-top:12px;">No attendance check-ins recorded for this course yet.</p>
+            {% endif %}
+        </div>
+    </main>
+</body>
+</html>

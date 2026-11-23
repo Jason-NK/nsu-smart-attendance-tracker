@@ -1,0 +1,64 @@
+flowchart TD
+    Student([Student])
+    Professor([Professor])
+    Advisor([Academic Advisor])
+    Admin([IT Support Admin])
+
+    subgraph Client [Client Side / User Interface]
+        MobileApp[Mobile Web Browser]
+        DesktopApp[Desktop Web Browser]
+    end
+
+    subgraph Controllers [Controller Layer]
+        SecFilter[Role & Session Security Filter]
+        AuthController[Authentication Controller]
+        SessionController[Attendance Session Controller]
+        CheckInController[Check-In Controller]
+    end
+
+    subgraph Services [Business Logic Layer]
+        AuthService[User Authentication & Password Hashing Service]
+        QRService[QR Code Generation & Validation]
+        ReportService[Reporting Service]
+        LogService[Security Logging Service]
+    end
+
+    subgraph Repository [Data Access Layer]
+        UserRepo[User Repository]
+        CourseRepo[Course Repository]
+        AttendanceRepo[Attendance Record Repository]
+        LogRepo[Security Log Repository]
+    end
+
+    Database[(Main Database - Encrypted Storage)]
+
+    Student -->|Scans code| MobileApp
+    Professor -->|Creates session / Uploads CSV| DesktopApp
+    Advisor -->|Views assigned records| DesktopApp
+    Admin -->|Checks logs / Manages users| DesktopApp
+
+    MobileApp -->|HTTPS Encrypted Requests| SecFilter
+    DesktopApp -->|HTTPS Encrypted Requests| SecFilter
+
+    SecFilter --> AuthController
+    SecFilter --> SessionController
+    SecFilter --> CheckInController
+
+    AuthController --> AuthService
+    AuthController --> LogService
+    SessionController --> QRService
+    CheckInController --> QRService
+    CheckInController --> LogService
+    SessionController --> ReportService
+
+    AuthService --> UserRepo
+    QRService --> CourseRepo
+    QRService --> AttendanceRepo
+    ReportService --> AttendanceRepo
+    ReportService --> CourseRepo
+    LogService --> LogRepo
+
+    UserRepo <--> Database
+    CourseRepo <--> Database
+    AttendanceRepo <--> Database
+    LogRepo <--> Database

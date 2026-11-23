@@ -1,0 +1,29 @@
+%% Activity Diagram 1: Student Check-In Workflow
+flowchart TD
+    Start((Start)) --> A[Student opens attendance app]
+    A --> B[System prompts for login]
+    B --> C{Is login successful?}
+    C -->|No| D[Show error message]
+    D --> B
+    C -->|Yes| E[Student points camera at QR code]
+    E --> F[System checks if code is valid]
+    F --> G{Is code valid and active?}
+    G -->|No| H[Display invalid code error]
+    H --> E
+    G -->|Yes| I[System records name, course, date, time]
+    I --> J[Display confirmation message]
+    J --> End((End))
+
+%% Activity Diagram 2: Professor Create Session Workflow
+flowchart TD
+    PStart((Start)) --> PA[Professor logs into system]
+    PA --> PB[Navigate to dashboard]
+    PB --> PC[Select 'Create Session']
+    PC --> PD[Select course from list]
+    PD --> PE{Course has students enrolled?}
+    PE -->|No| PF[Show 'No students found' error]
+    PF --> PB
+    PE -->|Yes| PG[Generate dynamic QR code]
+    PG --> PH[Save date and time of session]
+    PH --> PI[Display QR code on screen]
+    PI --> PEnd((End))

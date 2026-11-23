@@ -1,0 +1,26 @@
+flowchart LR
+    Student([Student])
+    Professor([Professor])
+    ITSupport([IT Support])
+
+    subgraph NSU Smart Attendance Tracker
+        UC1(Log into the system)
+        UC2(Create a course)
+        UC3(Create attendance session)
+        UC4(Generate QR code)
+        UC5(Scan QR code to check in)
+        UC6(View previous attendance records)
+        UC7(View course attendance records)
+        UC8(Export attendance reports)
+    end
+
+    Student --> UC1
+    Professor --> UC1
+    ITSupport --> UC1
+    Professor --> UC2
+    Professor --> UC3
+    Professor --> UC4
+    Student --> UC5
+    Student --> UC6
+    Professor --> UC7
+    Professor --> UC8
